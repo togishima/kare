@@ -4,6 +4,7 @@ description = "Test suite health check from CI artifacts — built for PHPUnit, 
 version.workspace = true
 edition.workspace = true
 license.workspace = true
+repository.workspace = true
 
 [dependencies]
 kare-core = { path = "../core", version = "0.0.1" }
