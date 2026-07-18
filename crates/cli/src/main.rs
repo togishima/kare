@@ -322,11 +322,7 @@ fn show_history(test_id: &str, db_path: &Path, limit: usize) -> Result<()> {
         )?;
 
         if let Some(git_ref) = &row.git_ref {
-            let short_ref = if git_ref.len() > 12 {
-                &git_ref[..12]
-            } else {
-                git_ref
-            };
+            let short_ref: String = git_ref.chars().take(12).collect();
             write!(&mut line, "  ({short_ref})")?;
         }
 
