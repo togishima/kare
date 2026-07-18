@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites>
+  <testsuite name="/app/phpunit.xml" tests="8" assertions="6" errors="1" failures="1" skipped="1" time="0.128760">
+    <testsuite name="unit" tests="8" assertions="6" errors="1" failures="1" skipped="1" time="0.128760">
+      <testsuite name="Kare\Fixture\CalculatorTest" file="/app/tests/CalculatorTest.php" tests="6" assertions="4" errors="1" failures="1" skipped="1" time="0.003855">
+        <testcase name="testAddition" file="/app/tests/CalculatorTest.php" line="12" class="Kare\Fixture\CalculatorTest" classname="Kare.Fixture.CalculatorTest" assertions="1" time="0.000998"/>
+        <testcase name="testFailingAssertion" file="/app/tests/CalculatorTest.php" line="17" class="Kare\Fixture\CalculatorTest" classname="Kare.Fixture.CalculatorTest" assertions="1" time="0.002372">
+          <failure type="PHPUnit\Framework\ExpectationFailedException">Kare\Fixture\CalculatorTest::testFailingAssertion
+Failed asserting that 4 is identical to 5.
+
+/app/tests/CalculatorTest.php:19</failure>
+        </testcase>
+        <testcase name="testThrowsError" file="/app/tests/CalculatorTest.php" line="22" class="Kare\Fixture\CalculatorTest" classname="Kare.Fixture.CalculatorTest" assertions="0" time="0.000210">
+          <error type="RuntimeException">Kare\Fixture\CalculatorTest::testThrowsError
+RuntimeException: boom
+
+/app/tests/CalculatorTest.php:24</error>
+        </testcase>
+        <testcase name="testSkipped" file="/app/tests/CalculatorTest.php" line="27" class="Kare\Fixture\CalculatorTest" classname="Kare.Fixture.CalculatorTest" assertions="0" time="0.000134">
+          <skipped/>
+        </testcase>
+        <testsuite name="Kare\Fixture\CalculatorTest::testWithProvider" tests="2" assertions="2" errors="0" failures="0" skipped="0" time="0.000140">
+          <testcase name="testWithProvider with data set &quot;zero&quot;" file="/app/tests/CalculatorTest.php" line="33" class="Kare\Fixture\CalculatorTest" classname="Kare.Fixture.CalculatorTest" assertions="1" time="0.000074"/>
+          <testcase name="testWithProvider with data set #0" file="/app/tests/CalculatorTest.php" line="33" class="Kare\Fixture\CalculatorTest" classname="Kare.Fixture.CalculatorTest" assertions="1" time="0.000067"/>
+        </testsuite>
+      </testsuite>
+      <testsuite name="Kare\Fixture\Sub\StringUtilTest" file="/app/tests/Sub/StringUtilTest.php" tests="2" assertions="2" errors="0" failures="0" skipped="0" time="0.124905">
+        <testcase name="testUppercase" file="/app/tests/Sub/StringUtilTest.php" line="11" class="Kare\Fixture\Sub\StringUtilTest" classname="Kare.Fixture.Sub.StringUtilTest" assertions="1" time="0.000062"/>
+        <testcase name="testSlowOperation" file="/app/tests/Sub/StringUtilTest.php" line="16" class="Kare\Fixture\Sub\StringUtilTest" classname="Kare.Fixture.Sub.StringUtilTest" assertions="1" time="0.124843"/>
+      </testsuite>
+    </testsuite>
+  </testsuite>
+</testsuites>
