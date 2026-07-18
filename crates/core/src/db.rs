@@ -65,6 +65,7 @@ pub struct RunMeta {
 }
 
 /// Summary row for listing recent runs.
+#[derive(Debug, Clone, serde::Serialize)]
 pub struct RunSummary {
     pub id: i64,
     pub run_at: String,
@@ -72,6 +73,15 @@ pub struct RunSummary {
     pub total_time_sec: f64,
     pub total_tests: i64,
     pub total_failures: i64,
+}
+
+/// A single stored test result row, as read back from `test_results`.
+#[derive(Debug, Clone)]
+pub struct StoredResult {
+    pub suite: String,
+    pub name: String,
+    pub time_sec: f64,
+    pub status: Status,
 }
 
 impl History {
@@ -217,6 +227,36 @@ impl History {
             })
         })?;
         rows.collect::<Result<Vec<_>, _>>().map_err(DbError::from)
+    }
+
+    /// All test results stored for a given run.
+    pub fn results_of_run(&self, run_id: i64) -> Result<Vec<StoredResult>, DbError> {
+        let mut stmt = self
+            .conn
+            .prepare("SELECT suite, name, time_sec, status FROM test_results WHERE run_id = ?1")?;
+        let rows = stmt.query_map(params![run_id], |row| {
+            let status: String = row.get(3)?;
+            Ok((
+                row.get::<_, String>(0)?,
+                row.get::<_, String>(1)?,
+                row.get::<_, f64>(2)?,
+                status,
+            ))
+        })?;
+
+        let mut results = Vec::new();
+        for row in rows {
+            let (suite, name, time_sec, status_str) = row?;
+            let status = Status::parse(&status_str)
+                .ok_or_else(|| DbError::Corrupt(format!("invalid status {status_str:?}")))?;
+            results.push(StoredResult {
+                suite,
+                name,
+                time_sec,
+                status,
+            });
+        }
+        Ok(results)
     }
 }
 
