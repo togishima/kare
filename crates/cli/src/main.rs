@@ -9,6 +9,7 @@ use kare_core::db::{now_utc_rfc3339, resolve_run_at, History, RunMeta};
 use kare_core::model::{Status, TestRun};
 use kare_core::parser::junit::JunitParser;
 use kare_core::parser::ReportParser;
+use std::fmt::Write;
 
 /// Test suite health check from CI artifacts — built for PHPUnit,
 /// accepts any JUnit XML.
@@ -40,6 +41,18 @@ enum Command {
         #[arg(long = "ci-job-url")]
         ci_job_url: Option<String>,
     },
+    /// Display test history for a specific test.
+    History {
+        /// Test identifier in format 'Suite::testName'.
+        #[arg(long)]
+        test: String,
+        /// Path to the history DB.
+        #[arg(long, default_value = ".kare/history.db")]
+        db: PathBuf,
+        /// Maximum number of runs to display.
+        #[arg(long, default_value = "20")]
+        limit: usize,
+    },
 }
 
 fn main() -> Result<()> {
@@ -52,6 +65,7 @@ fn main() -> Result<()> {
             git_ref,
             ci_job_url,
         } => ingest(&input, &db, at.as_deref(), git_ref, ci_job_url),
+        Command::History { test, db, limit } => show_history(&test, &db, limit),
     }
 }
 
@@ -112,6 +126,57 @@ fn ingest(
     println!(
         "Ingested {total_tests} tests ({total_failures} failures) as run #{run_id} at {run_at}"
     );
+
+    Ok(())
+}
+
+fn show_history(test_id: &str, db_path: &Path, limit: usize) -> Result<()> {
+    let (suite, name) = test_id
+        .split_once("::")
+        .ok_or_else(|| anyhow::anyhow!("expected format 'Suite::testName'"))?;
+
+    let opened = History::open(db_path)
+        .with_context(|| format!("failed to open history DB at {}", db_path.display()))?;
+    if opened.recovered {
+        eprintln!(
+            "warning: history DB was corrupt; moved aside to {}.corrupt and recreated",
+            db_path.display()
+        );
+    }
+    let history = opened.history;
+
+    let rows = history
+        .test_history(suite, name, limit)
+        .context("failed to query test history")?;
+
+    if rows.is_empty() {
+        println!("no history for '{test_id}'");
+        return Ok(());
+    }
+
+    println!("History for '{test_id}' (last {} runs)", rows.len());
+
+    for row in rows {
+        let mut line = String::new();
+        write!(
+            &mut line,
+            "{}  {:<8}  {:.3}s",
+            row.run_at,
+            row.status.as_str(),
+            row.time_sec
+        )?;
+
+        if let Some(git_ref) = &row.git_ref {
+            let short_ref = if git_ref.len() > 12 {
+                &git_ref[..12]
+            } else {
+                git_ref
+            };
+            write!(&mut line, "  ({short_ref})")?;
+        }
+
+        println!("{}", line);
+    }
 
     Ok(())
 }

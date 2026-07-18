@@ -74,6 +74,16 @@ pub struct RunSummary {
     pub total_failures: i64,
 }
 
+/// History row for a single test across runs, newest first.
+#[derive(Debug, Clone)]
+pub struct TestHistoryRow {
+    pub run_id: i64,
+    pub run_at: String,
+    pub git_ref: Option<String>,
+    pub status: Status,
+    pub time_sec: f64,
+}
+
 impl History {
     /// Opens (creating if needed) the history DB at `path`.
     ///
@@ -217,6 +227,48 @@ impl History {
             })
         })?;
         rows.collect::<Result<Vec<_>, _>>().map_err(DbError::from)
+    }
+
+    /// Rows for one test across runs, newest first (run_at DESC, run id DESC).
+    pub fn test_history(
+        &self,
+        suite: &str,
+        name: &str,
+        limit: usize,
+    ) -> Result<Vec<TestHistoryRow>, DbError> {
+        let mut stmt = self.conn.prepare(
+            "SELECT r.id, r.run_at, r.git_ref, t.status, t.time_sec
+             FROM test_results t
+             JOIN runs r ON t.run_id = r.id
+             WHERE t.suite = ?1 AND t.name = ?2
+             ORDER BY r.run_at DESC, r.id DESC
+             LIMIT ?3",
+        )?;
+        let rows = stmt.query_map(params![suite, name, limit as i64], |row| {
+            let status_str: String = row.get(3)?;
+            Ok((
+                row.get::<_, i64>(0)?,
+                row.get::<_, String>(1)?,
+                row.get::<_, Option<String>>(2)?,
+                status_str,
+                row.get::<_, f64>(4)?,
+            ))
+        })?;
+
+        let mut results = Vec::new();
+        for row in rows {
+            let (run_id, run_at, git_ref, status_str, time_sec) = row?;
+            let status = Status::parse(&status_str)
+                .ok_or_else(|| DbError::Corrupt(format!("invalid status {status_str:?}")))?;
+            results.push(TestHistoryRow {
+                run_id,
+                run_at,
+                git_ref,
+                status,
+                time_sec,
+            });
+        }
+        Ok(results)
     }
 }
 
