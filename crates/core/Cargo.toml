@@ -1,6 +1,6 @@
 [package]
 name = "kare-core"
-description = "Core parsing and analysis logic for kare, a test suite health check tool"
+description = "Core parsing and analysis logic for kare, a test pruning triage tool"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
