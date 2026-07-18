@@ -7,6 +7,10 @@ use crate::config::Config;
 use crate::db::{DbError, History, RunSummary, StoredResult};
 use crate::model::Status;
 
+/// Version of the [`Report`] JSON output contract. Bump when the shape of
+/// `Report` changes in a way that breaks consumers.
+pub const SCHEMA_VERSION: u32 = 1;
+
 #[derive(Debug, thiserror::Error)]
 pub enum AnalysisError {
     #[error("database error: {0}")]
@@ -52,6 +56,8 @@ pub enum HealthStatus {
 
 #[derive(Debug, Clone, serde::Serialize)]
 pub struct Report {
+    /// Version of the JSON output contract this report conforms to.
+    pub schema_version: u32,
     /// 0..=100.
     pub score: u32,
     pub status: HealthStatus,
@@ -150,6 +156,7 @@ pub fn analyze(history: &History, config: &Config) -> Result<Report, AnalysisErr
     };
 
     Ok(Report {
+        schema_version: SCHEMA_VERSION,
         score,
         status,
         run: target_run,

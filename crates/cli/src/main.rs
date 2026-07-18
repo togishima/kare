@@ -3,8 +3,8 @@ use std::io::BufReader;
 use std::path::{Path, PathBuf};
 
 use anyhow::{Context, Result};
-use clap::{CommandFactory, Parser, Subcommand};
-use kare_core::analysis::{self, HealthStatus, Report};
+use clap::{CommandFactory, Parser, Subcommand, ValueEnum};
+use kare_core::analysis;
 use kare_core::ci;
 use kare_core::config;
 use kare_core::db::{now_utc_rfc3339, resolve_run_at, History, RunMeta};
@@ -12,6 +12,14 @@ use kare_core::model::{Status, TestRun};
 use kare_core::parser::junit::JunitParser;
 use kare_core::parser::ReportParser;
 use std::fmt::Write;
+
+/// Output format for the default (report) command.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, ValueEnum)]
+enum OutputFormat {
+    Text,
+    Json,
+    Markdown,
+}
 
 /// Test suite health check from CI artifacts — built for PHPUnit,
 /// accepts any JUnit XML.
@@ -45,6 +53,9 @@ struct Cli {
     /// Exit with code 2 if the health score is below this threshold.
     #[arg(long = "fail-under")]
     fail_under: Option<u32>,
+    /// Output format for the report.
+    #[arg(long, value_enum, default_value = "text")]
+    format: OutputFormat,
 }
 
 #[derive(Subcommand)]
@@ -143,7 +154,14 @@ fn default_command(cli: &Cli) -> Result<()> {
         .with_context(|| format!("failed to load config at {}", cli.config.display()))?;
     let report = analysis::analyze(&history, &cfg).context("failed to analyze history")?;
 
-    print_report(&report);
+    match cli.format {
+        OutputFormat::Text => print!("{}", kare_core::render::to_text(&report)),
+        OutputFormat::Markdown => print!("{}", kare_core::render::to_markdown(&report)),
+        OutputFormat::Json => println!(
+            "{}",
+            serde_json::to_string_pretty(&report).context("failed to serialize report as JSON")?
+        ),
+    }
 
     if let Some(threshold) = cli.fail_under {
         if report.score < threshold {
@@ -231,58 +249,6 @@ fn ingest_into(
         total_tests,
         total_failures,
     })
-}
-
-fn print_report(report: &Report) {
-    println!("[Kare] Test Health Report");
-    println!("{}", "-".repeat(50));
-    let status_label = match report.status {
-        HealthStatus::Healthy => "✅ Healthy",
-        HealthStatus::NeedsPruning => "⚠️ Needs Pruning",
-        HealthStatus::Overgrown => "🔴 Overgrown",
-    };
-    println!("Status: {status_label}");
-    println!("Score:  {} / 100", report.score);
-    println!();
-
-    let has_findings = !report.slow.is_empty()
-        || !report.flaky.is_empty()
-        || !report.regression.is_empty()
-        || report.cost.is_some();
-
-    if !has_findings {
-        println!("Findings: none 🎉");
-    } else {
-        println!("Findings:");
-        for f in &report.slow {
-            println!(
-                "- 🐢 {:<12}'{}' took {:.2}s (threshold {:.1}s)",
-                "Slow:", f.id, f.time_sec, f.threshold_sec
-            );
-        }
-        for f in &report.flaky {
-            println!(
-                "- 📉 {:<12}'{}' failed {}/{} runs in history",
-                "Flaky:", f.id, f.failed_runs, f.window_runs
-            );
-        }
-        for f in &report.regression {
-            println!(
-                "- 🔺 {:<12}'{}' {:.2}s → {:.2}s (x{:.1})",
-                "Regression:", f.id, f.prev_sec, f.current_sec, f.factor
-            );
-        }
-        if let Some(cost) = &report.cost {
-            println!(
-                "- 💰 {:<12}total {:.1} min ≈ {:.2} per run",
-                "Cost:", cost.total_min, cost.amount
-            );
-        }
-    }
-
-    if let Some(msg) = &report.insufficient_history {
-        println!("({msg} — flaky/regression skipped)");
-    }
 }
 
 fn show_history(test_id: &str, db_path: &Path, limit: usize) -> Result<()> {
