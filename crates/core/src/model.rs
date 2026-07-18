@@ -9,6 +9,29 @@ pub enum Status {
     Skipped,
 }
 
+impl Status {
+    /// Stable string form used for DB storage.
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            Status::Passed => "passed",
+            Status::Failed => "failed",
+            Status::Error => "error",
+            Status::Skipped => "skipped",
+        }
+    }
+
+    /// Inverse of [`Status::as_str`].
+    pub fn parse(s: &str) -> Option<Status> {
+        match s {
+            "passed" => Some(Status::Passed),
+            "failed" => Some(Status::Failed),
+            "error" => Some(Status::Error),
+            "skipped" => Some(Status::Skipped),
+            _ => None,
+        }
+    }
+}
+
 /// A single test case result within one run.
 #[derive(Debug, Clone, PartialEq)]
 pub struct TestResult {
