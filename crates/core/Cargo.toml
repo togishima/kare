@@ -4,3 +4,7 @@ description = "Core parsing and analysis logic for kare, a test suite health che
 version.workspace = true
 edition.workspace = true
 license.workspace = true
+
+[dependencies]
+quick-xml = "0.37"
+thiserror = "2"
