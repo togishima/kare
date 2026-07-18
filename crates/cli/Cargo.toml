@@ -1,6 +1,6 @@
 [package]
 name = "kare"
-description = "Test suite health check from CI artifacts — built for PHPUnit, accepts any JUnit XML"
+description = "Prune your test suite — deletion triage from CI artifacts and run history. Built for PHPUnit, accepts any JUnit XML"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
