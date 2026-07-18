@@ -1,0 +1,5 @@
+/target
+.kare/
+.tokensave/
+.claude/settings.local.json
+.claude/.headroom_wrap_marker.json

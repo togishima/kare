@@ -1,0 +1,10 @@
+[package]
+name = "kare"
+description = "Test suite health check from CI artifacts — built for PHPUnit, accepts any JUnit XML"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+kare-core = { path = "../core", version = "0.0.1" }
+clap = { version = "4", features = ["derive"] }
