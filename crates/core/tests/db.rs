@@ -160,3 +160,37 @@ fn ci_detect_none_present() {
     assert_eq!(info.git_ref, None);
     assert_eq!(info.job_url, None);
 }
+
+#[test]
+fn test_history_returns_rows_newest_first_with_limit() {
+    let run = JunitParser
+        .parse(&mut FIXTURE.as_bytes())
+        .expect("fixture must parse");
+
+    let mut history = History::open_in_memory().expect("open in-memory db");
+
+    // Insert two runs with different run_at timestamps
+    history
+        .insert_run(&run, &meta("2026-07-01T00:00:00Z"))
+        .expect("insert first run");
+    history
+        .insert_run(&run, &meta("2026-07-02T00:00:00Z"))
+        .expect("insert second run");
+
+    // Query testAddition history
+    let rows = history
+        .test_history("Kare\\Fixture\\CalculatorTest", "testAddition", 10)
+        .expect("test_history");
+
+    // Should return 2 rows, newest first
+    assert_eq!(rows.len(), 2);
+    assert_eq!(rows[0].run_at, "2026-07-02T00:00:00Z");
+    assert_eq!(rows[1].run_at, "2026-07-01T00:00:00Z");
+
+    // With limit=1, should return only newest
+    let rows_limited = history
+        .test_history("Kare\\Fixture\\CalculatorTest", "testAddition", 1)
+        .expect("test_history with limit");
+    assert_eq!(rows_limited.len(), 1);
+    assert_eq!(rows_limited[0].run_at, "2026-07-02T00:00:00Z");
+}
