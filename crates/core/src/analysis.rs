@@ -193,7 +193,7 @@ fn compute_flaky(
             window_runs,
         })
         .collect();
-    flaky.sort_by(|a, b| b.failed_runs.cmp(&a.failed_runs));
+    flaky.sort_by_key(|b| std::cmp::Reverse(b.failed_runs));
     Ok(flaky)
 }
 
