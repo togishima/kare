@@ -19,3 +19,7 @@ hosting = "github"
 install-updater = false
 # Whether CI should trigger releases with dispatches instead of tag pushes
 pr-run-mode = "upload"
+
+[dist.github-custom-runners]
+aarch64-apple-darwin = "macos-14"
+x86_64-apple-darwin = "macos-15-intel"
