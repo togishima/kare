@@ -4,6 +4,18 @@
 
 テストは書くより消すのが難しい。kare は「どのテストを刈るべきか」の判断材料を提供する CLI です。CI の成果物（JUnit XML）と実行を跨いだ履歴から flaky・実行時間の悪化・遅いテストを検出し、削除候補のトリアージ材料として提示します。
 
+## Install
+
+```bash
+curl -LsSf https://github.com/togishima/kare/releases/latest/download/kare-installer.sh | sh
+```
+
+Or build from source with cargo:
+
+```bash
+cargo install --git https://github.com/togishima/kare kare
+```
+
 ## 設計思想
 
 - **ツールはアタリを付け、人間が判断する** — テストの自動削除は絶対にしません
